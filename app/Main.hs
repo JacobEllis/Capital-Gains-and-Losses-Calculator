@@ -3,25 +3,35 @@ import Data.Time
 import Data.List
 import Data.Binary
 import Data.Char (isSpace)
+import Data.Fixed
 
 main :: IO ()
 main = do
-    putStrLn "Enter the name and file path of a CSV containing your transactions. (Remove the header line)"
-    fileName <- getLine
-    transactions <- readCsv fileName
-    let cgt = calculateHiFo transactions []
-    print "Capital Gains/Losses: "
-    print $ reverse $ fst cgt
-    --writeCapitalGainsCsv "capitalGains.csv" $ fst cgt
-    print "Remaining transactions: "
-    print $ reverse $ snd cgt
-    --writeTransactionsCsv "remainingTransactions.csv" $ snd cgt
+    putStrLn "Enter the name and file path of a CSV containing your transactions. (./Test Casees/Test01.csv)"
+    fileNameInput <- getLine
+    if null fileNameInput then
+        readAndCalculateHiFo "./Test Cases/Test01.csv"
+    else
+        readAndCalculateHiFo fileNameInput
+    
+
+
+readAndCalculateHiFo :: String -> IO ()
+readAndCalculateHiFo file = do
+                      transactions <- readCsv file
+                      let cgt = calculateHiFo transactions []
+                      print "Capital Gains/Losses: "
+                      print $ reverse $ fst cgt
+                      --writeCapitalGainsCsv "capitalGains.csv" $ fst cgt
+                      print "Remaining transactions: "
+                      print $ reverse $ snd cgt
+                      --writeTransactionsCsv "remainingTransactions.csv" $ snd cgt
 
 data TxType = Buy | Sell deriving (Show, Eq)
 
-data Transaction = Transaction {txDate :: Day, txType :: TxType, txQuantity :: Float, txPrice :: Float} deriving (Show, Eq)
+data Transaction = Transaction {txDate :: UTCTime, txType :: TxType, txQuantity :: Float, txPrice :: Float} deriving (Show, Eq)
 
-data CapGainTx = CapGainTx {capGainTxdate :: Day, capGainTxdquantity :: Float, capGainTxdbuyTotal :: Float, capGainTxdsellTotal :: Float, capGainTxdgainOrLoss :: Float} deriving (Show)
+data CapGainTx = CapGainTx {capGainTxdate :: UTCTime, capGainTxdquantity :: Float, capGainTxdbuyTotal :: Float, capGainTxdsellTotal :: Float, capGainTxdgainOrLoss :: Float} deriving (Show)
 
 profit :: Transaction -> Transaction -> [Transaction] -> (Maybe CapGainTx, [Transaction])
 profit buy sell lst = let qb = txQuantity buy
@@ -50,8 +60,8 @@ readCsv path = do
   return $ map parseLine $ lines contents
   where
     parseLine :: String -> Transaction
-    parseLine line = let [dateYear, dateMonth, dateDay, txTypeStr, quantityStr, priceStr] = wordsWhen (==',') line
-                         date = fromGregorian (read dateYear :: Integer) (read dateMonth :: Int) (read dateDay :: Int)
+    parseLine line = let [dateYear, dateMonth, dateDay, timeHour, timeMinute, timeSeconds, txTypeStr, quantityStr, priceStr] = wordsWhen (==',') line
+                         date = mkUTCTime (read dateYear :: Integer, read dateMonth :: Int, read dateDay :: Int) (read timeHour :: Int, read timeMinute :: Int, read timeSeconds :: Pico)
                          txType = if trim txTypeStr == "Buy" then Buy else Sell
                          quantity = read quantityStr :: Float
                          price = read priceStr :: Float
@@ -97,6 +107,13 @@ wordsWhen p s =  case dropWhile p s of
                       "" -> []
                       s' -> w : wordsWhen p s''
                             where (w, s'') = break p s'
+
+mkUTCTime :: (Integer, Int, Int)
+          -> (Int, Int, Pico)
+          -> UTCTime
+mkUTCTime (year, mon, day) (hour, min, sec) =
+  UTCTime (fromGregorian year mon day)
+          (timeOfDayToTime (TimeOfDay hour min sec))
 
 containsSellTransaction :: [Transaction] -> Bool
 containsSellTransaction = foldr (\ t -> (||) (txType t == Sell)) False
