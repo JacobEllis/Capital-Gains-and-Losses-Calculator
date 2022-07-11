@@ -1,6 +1,6 @@
 # Captial Gains & Losses Calculator
 ## Description
-This project is a simple a Haskell program that takes a CSV input of transactions and calculates the captial gains or losses for those transactions. The project was built for Emurgo's Professional Developer Program
+This project is a simple a Haskell program that takes a CSV input of transactions and calculates the captial gains or losses for those transactions. Currently I am only applying the HiFo (Highest in First out) accounting method. This is a method that takes the highest cost items out first to be used for tax purposes. The buy transaction used must have taken place before the sell transaction that is triggering the realized gain/loss. I built this with the United States tax law in mind as well as making it for Crypto instead of securities. The biggest difference of having Crypto in mind is the Wash Sale rule. I did not include the Wash Sale rule as part of the algorithm because the rule does not apply for crytocurrencies, however I may add it in the future. The project was built for Emurgo's Professional Developer Program and nothing from this readme or program is financial advice.
 ## Usage
 ``` 
 cabal run Capital-Gains-Loasses-Calculator
