@@ -4,28 +4,33 @@ import Data.List
 import Data.Binary
 import Data.Char (isSpace)
 import Data.Fixed
+import System.Console.ANSI
 
 main :: IO ()
 main = do
-    putStrLn "Enter the name and file path of a CSV containing your transactions. (./Test Casees/Test01.csv)"
+    clearScreen
+    putStrLn "Enter the name and file path of a CSV containing your transactions. (./Test Cases/Test01.csv)"
     fileNameInput <- getLine
     if null fileNameInput then
         readAndCalculateHiFo "./Test Cases/Test01.csv"
     else
         readAndCalculateHiFo fileNameInput
-    
-
 
 readAndCalculateHiFo :: String -> IO ()
 readAndCalculateHiFo file = do
                       transactions <- readCsv file
                       let cgt = calculateHiFo transactions []
-                      print "Capital Gains/Losses: "
+                      print "Capital Gains/Losses using HiFo: "
                       print $ reverse $ fst cgt
-                      --writeCapitalGainsCsv "capitalGains.csv" $ fst cgt
-                      print "Remaining transactions: "
+                      print "Remaining un-realized transactions: "
                       print $ reverse $ snd cgt
-                      --writeTransactionsCsv "remainingTransactions.csv" $ snd cgt
+                      let totalgainloss = calculateTotalGainOrLoss $ fst cgt
+                      print "Total realized Gain/Loss: "
+                      print totalgainloss
+                      print "Writing to file capitalGains.csv"
+                      writeCapitalGainsCsv "capitalGains.csv" $ fst cgt
+                      print "Writing to file remainingTransactions.csv"
+                      writeTransactionsCsv "remainingTransactions.csv" $ snd cgt
 
 data TxType = Buy | Sell deriving (Show, Eq)
 
@@ -135,3 +140,6 @@ calculateHiFo txs cgt = if containsSellTransaction txs then do
                                     (cgt, txs)
                         else
                           (cgt, txs)
+
+calculateTotalGainOrLoss :: [CapGainTx] -> Float
+calculateTotalGainOrLoss = foldr (\ t -> (+) (capGainTxdgainOrLoss t)) 0
